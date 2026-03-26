@@ -1,0 +1,10 @@
+{
+  "name": "agent-test",
+  "description": "Autonomous UI agent testing powered by the Ralph Loop",
+  "version": "0.1.0",
+  "author": {
+    "name": "agent-test contributors"
+  },
+  "keywords": ["testing", "qa", "agent-test", "ralph-loop", "automation"],
+  "hooks": "./hooks/hooks.json"
+}

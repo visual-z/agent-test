@@ -1,0 +1,39 @@
+{
+  "name": "agent-test",
+  "version": "0.1.0",
+  "description": "Autonomous UI agent testing with Ralph Loop for Claude Code and OpenCode",
+  "keywords": [
+    "agent-test",
+    "ui-testing",
+    "ralph-loop",
+    "claude-code",
+    "opencode",
+    "autonomous-testing",
+    "qa",
+    "browser-testing"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/agent-test"
+  },
+  "files": [
+    "skills/",
+    "prompts/",
+    "reference/",
+    "plugins/",
+    "install/",
+    "SKILL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "install:claude-code": "bash install/install-claude-code.sh",
+    "install:opencode": "bash install/install-opencode.sh",
+    "install:claude-code:project": "bash install/install-claude-code.sh --project",
+    "install:claude-code:global": "bash install/install-claude-code.sh --global",
+    "install:opencode:project": "bash install/install-opencode.sh --project",
+    "install:opencode:global": "bash install/install-opencode.sh --global",
+    "uninstall:claude-code": "bash install/install-claude-code.sh --uninstall",
+    "uninstall:opencode": "bash install/install-opencode.sh --uninstall"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "agent-test-opencode-plugin",
+  "version": "0.1.0",
+  "description": "Ralph Loop harness for autonomous agent testing in OpenCode — externally drives continuation prompts so the agent never has to self-prompt",
+  "main": "index.ts",
+  "type": "module",
+  "keywords": [
+    "opencode",
+    "plugin",
+    "agent-test",
+    "ralph-loop",
+    "autonomous-testing"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@opencode-ai/plugin": "latest"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": "*"
+  }
+}
