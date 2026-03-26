@@ -301,7 +301,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
         // -----------------------------------------------------------------
         if (event.type === "session.created") {
           const loop = getLoopState();
-          const newSessionId = (event as any).properties?.sessionID ?? null;
+          const newSessionId = (event as any).properties?.info?.id ?? null;
           // Always rebind on session.created — if old session crashed without
           // firing session.deleted, this prevents the loop from "sticking dead"
           if (newSessionId) {
@@ -322,7 +322,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
         // -----------------------------------------------------------------
         if (event.type === "session.deleted") {
           const loop = getLoopState();
-          const deletedId = (event as any).properties?.sessionID ?? null;
+          const deletedId = (event as any).properties?.info?.id ?? null;
           if (deletedId && deletedId === loop.sessionId) {
             loop.sessionId = null;
             saveLoopState(loop);
