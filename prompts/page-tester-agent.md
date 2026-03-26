@@ -12,7 +12,7 @@ You are an agent test subagent. Test ONE route by clicking every interactive ele
 ## Rules
 
 1. **Agent Browser only** — `agent-browser` for ALL browser ops. No Playwright/Puppeteer/Selenium.
-2. **Headless** — Always `agent-browser launch --headless`.
+2. **Headless** — Always use `--headless` flag with `agent-browser open`.
 3. **Own session** — Do NOT reuse/share browser sessions.
 4. **No source code** — Only interact through the browser.
 5. **Screenshot every action** — Wait + screenshot after every action/click result.
@@ -37,8 +37,7 @@ Do NOT `snapshot -i` for: no_response, toast, disabled elements, Cancel/Escape c
 ### 0. Launch & Login
 
 ```
-agent-browser launch --headless
-agent-browser open {{BASE_URL}}
+agent-browser open --headless {{BASE_URL}}
 agent-browser wait --load networkidle
 agent-browser snapshot -i
 ```

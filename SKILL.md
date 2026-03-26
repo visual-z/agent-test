@@ -74,7 +74,7 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 | **Subagent terminates after returning its result** | Once a subagent returns its report (JSON for testing, Markdown for review), it dies. The orchestrator collects the result. |
 | **NEVER reuse a subagent for multiple routes** | Reusing a subagent means accumulated context → hallucination risk, context overflow, and stale browser state. |
 | **NEVER pass `task_id` to continue a previous subagent** | Each dispatch is a clean `Task()` call without `task_id`. No session continuation. |
-| **Browser sessions are per-subagent** | Each testing subagent runs `agent-browser launch --headless` and `agent-browser close` within its own lifetime. Review subagents don't need browsers. |
+| **Browser sessions are per-subagent** | Each testing subagent runs `agent-browser open --headless <url>` and `agent-browser close` within its own lifetime. Review subagents don't need browsers. |
 
 **The lifecycle is: born → do one job → return result → die.** No exceptions.
 
@@ -498,7 +498,7 @@ project-root/
 
 ### Phase 2: Test Execution
 - [ ] First batch dispatched with **fresh** subagents in parallel
-- [ ] Each subagent uses independent browser session (`agent-browser launch --headless`)
+- [ ] Each subagent uses independent browser session (`agent-browser open --headless <url>`)
 - [ ] **No subagent reuse** — each batch gets new Task calls without `task_id`
 - [ ] Results collected and state updated after each batch
 - [ ] **Orphaned browser processes cleaned up** after each batch (`pkill -f agent-browser`)

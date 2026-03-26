@@ -24,10 +24,10 @@ Each subagent tests **one route**. The algorithm treats the page as a maze: clic
 Every subagent MUST start with:
 
 ```
-agent-browser launch --headless
+agent-browser open --headless {url}
 ```
 
-This creates an isolated browser instance for this subagent. After all testing completes:
+This creates an isolated browser instance for this subagent and navigates to the given URL. After all testing completes:
 
 ```
 agent-browser close
@@ -45,7 +45,7 @@ The `agent-browser close` command MUST be executed even if:
 Treat every test as a try/finally block:
 
 ```
-agent-browser launch --headless
+agent-browser open --headless {base_url}
 try:
     ... all testing steps ...
 finally:
@@ -146,8 +146,7 @@ After backtracking, the page state may have changed (e.g., a row was added/remov
 ### Phase 0: Launch & Login
 
 ```
-agent-browser launch --headless
-agent-browser open {base_url}
+agent-browser open --headless {base_url}
 agent-browser wait --load networkidle
 agent-browser snapshot -i                              ← DECISION POINT: find login form
 # Identify login form from snapshot
@@ -305,7 +304,7 @@ Report a bug if:
 
 ## Checklist
 
-- [ ] `agent-browser launch --headless` at start
+- [ ] `agent-browser open --headless {url}` at start
 - [ ] Independent session (not shared with other subagents)
 - [ ] Login verified before navigation
 - [ ] Baseline screenshots present: `00-login-success.png`, `01-table-page.png`

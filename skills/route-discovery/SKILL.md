@@ -41,8 +41,7 @@ Search patterns (framework-agnostic):
 If no source code access, explore via browser using **Agent Browser only** (headless mode):
 
 ```
-agent-browser launch --headless
-agent-browser open {base_url}
+agent-browser open --headless {base_url}
 agent-browser wait --load networkidle
 ```
 
