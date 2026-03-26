@@ -59,7 +59,7 @@ The state file is the single source of truth. The agent never needs to emit spec
 bash install/install-claude-code.sh --project
 ```
 
-This copies the plugin, skills, prompts, and reference docs into your project's `.claude/` directory.
+This copies the plugin, skills, prompts, and reference docs into your project's `.claude/` directory and registers the plugin with Claude Code.
 
 **Other install options:**
 
@@ -120,6 +120,9 @@ cp plugins/claude-code/.claude-plugin/plugin.json .claude/plugins/monkey-test/.c
 cp plugins/claude-code/hooks/hooks.json .claude/plugins/monkey-test/hooks/
 cp plugins/claude-code/scripts/ralph-loop.sh .claude/plugins/monkey-test/scripts/
 chmod +x .claude/plugins/monkey-test/scripts/ralph-loop.sh
+
+# Register the plugin (required — without this, Claude Code won't load it)
+claude plugin install .claude/plugins/monkey-test --scope project
 
 # Skills, prompts, reference docs
 mkdir -p .claude/skills/monkey-test

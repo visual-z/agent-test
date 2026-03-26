@@ -259,8 +259,18 @@ digraph iteration {
    - **Each subagent is a fresh Task call — no `task_id` reuse**
 5. **Subagents return and die** — Each returns its report JSON and terminates. The orchestrator collects results.
 6. **Write reports** — Save each report to `monkey-test-reports/{route_slug}.json`
-7. **Update state** — Move routes from pending to completed/failed, update counters
-8. **Go idle** — The harness reads the state file and decides whether to continue or transition to Phase 3
+7. **Cleanup orphaned browsers** — After collecting all results, kill any leaked `agent-browser` processes from crashed subagents:
+   ```bash
+   # Kill any orphaned agent-browser processes (subagents that crashed without closing)
+   pkill -f 'agent-browser' 2>/dev/null || true
+   # Also clean up orphaned Chrome processes spawned by agent-browser
+   pkill -f 'chrome.*--headless' 2>/dev/null || true
+   # Clean up temp directories
+   rm -rf /tmp/agent-browser-chrome-* 2>/dev/null || true
+   ```
+   This is a **safety net** — well-behaved subagents close their own browsers. But crashed subagents may leave orphans.
+8. **Update state** — Move routes from pending to completed/failed, update counters
+9. **Go idle** — The harness reads the state file and decides whether to continue or transition to Phase 3
 
 ### Phase 3: Bug Report Review (Ralph Loop)
 
@@ -475,6 +485,7 @@ project-root/
 | Review subagent crashes | Route stays `review_pending` — retried next review iteration |
 | Report JSON missing for a route | Mark route as `review_failed` in state, note in FINAL-REPORT |
 | Screenshots directory empty | Review subagent returns "no test data" report, recommends re-test |
+| Browser processes leaked | Orchestrator runs `pkill -f 'agent-browser'` and `pkill -f 'chrome.*--headless'` after each batch as safety net |
 
 ## Checklist
 
@@ -490,6 +501,7 @@ project-root/
 - [ ] Each subagent uses independent browser session (`agent-browser launch --headless`)
 - [ ] **No subagent reuse** — each batch gets new Task calls without `task_id`
 - [ ] Results collected and state updated after each batch
+- [ ] **Orphaned browser processes cleaned up** after each batch (`pkill -f agent-browser`)
 - [ ] Loop continues until all routes tested or blocked
 
 ### Phase 3: Bug Report Review

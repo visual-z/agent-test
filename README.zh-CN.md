@@ -59,7 +59,7 @@ Ralph Loop 驱动器（Claude Code 的 hook 或 OpenCode 的 plugin）在 agent 
 bash install/install-claude-code.sh --project
 ```
 
-将 plugin、skills、prompts 和 reference 文档复制到当前项目的 `.claude/` 目录。
+将 plugin、skills、prompts 和 reference 文档复制到当前项目的 `.claude/` 目录，并注册插件到 Claude Code。
 
 **其他安装方式：**
 
@@ -120,6 +120,9 @@ cp plugins/claude-code/.claude-plugin/plugin.json .claude/plugins/monkey-test/.c
 cp plugins/claude-code/hooks/hooks.json .claude/plugins/monkey-test/hooks/
 cp plugins/claude-code/scripts/ralph-loop.sh .claude/plugins/monkey-test/scripts/
 chmod +x .claude/plugins/monkey-test/scripts/ralph-loop.sh
+
+# 注册插件（必须 — 不注册的话 Claude Code 不会加载插件）
+claude plugin install .claude/plugins/monkey-test --scope project
 
 # Skills、prompts、reference 文档
 mkdir -p .claude/skills/monkey-test

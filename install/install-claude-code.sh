@@ -210,6 +210,32 @@ for ref_file in "$REPO_ROOT"/reference/*; do
 done
 success "Copied reference/"
 
+# ── Register plugin ──────────────────────────────────────────────────────────
+# Per official docs, plugins must be registered via `claude plugin install`
+# so they appear in `enabledPlugins` in settings.json.
+info "Registering plugin with Claude Code..."
+
+PLUGIN_SCOPE="user"
+if [ "$MODE" = "project" ]; then
+    PLUGIN_SCOPE="project"
+fi
+
+if command -v claude >/dev/null 2>&1; then
+    # Use absolute path for the plugin directory
+    PLUGIN_ABS_PATH="$(cd "$PLUGIN_DIR" && pwd)"
+    if claude plugin install "$PLUGIN_ABS_PATH" --scope "$PLUGIN_SCOPE" 2>/dev/null; then
+        success "Registered plugin via 'claude plugin install' (scope: $PLUGIN_SCOPE)"
+    else
+        warn "Plugin registration via CLI failed. This may happen if Claude Code is not running."
+        warn "You can manually register later by running:"
+        warn "  claude plugin install \"$PLUGIN_ABS_PATH\" --scope $PLUGIN_SCOPE"
+    fi
+else
+    warn "'claude' CLI not found in PATH."
+    warn "After installing Claude Code, register the plugin manually:"
+    warn "  claude plugin install \"$(cd "$PLUGIN_DIR" && pwd)\" --scope $PLUGIN_SCOPE"
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 printf "\n${GREEN}${BOLD}Installation complete!${RESET}\n\n"
 

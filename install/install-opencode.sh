@@ -225,6 +225,13 @@ for ref_file in "$REPO_ROOT"/reference/*; do
 done
 success "Copied reference/"
 
+# ── Auto-discovery note ──────────────────────────────────────────────────────
+# OpenCode automatically discovers plugins from {plugin,plugins}/*.{ts,js}
+# inside .opencode/ directories. No manual registration is needed.
+# OpenCode also auto-installs @opencode-ai/plugin dependency on startup
+# when it detects the .opencode/ directory has a package.json.
+info "Plugin will be auto-discovered by OpenCode from: $PLUGIN_DIR/monkey-test-loop.ts"
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 printf "\n${GREEN}${BOLD}Installation complete!${RESET}\n\n"
 

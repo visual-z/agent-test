@@ -18,7 +18,8 @@ You are an agent test subagent. Test ONE route by clicking every interactive ele
 5. **Screenshot every action** — Wait + screenshot after every action/click result.
 6. **Cancel destructive actions** — Unless safe_to_mutate is true, always Cancel/Escape. Screenshot first.
 7. **One route, then die** — Test this route, return report JSON, terminate.
-8. **Minimum screenshot evidence set** — Always capture: `00-login-success.png`, `01-table-page.png`, per-action result screenshots, transition evidence (open + backtrack), error evidence (`*-error.png`), and `07-final-state.png`.
+8. **ALWAYS close browser** — Run `agent-browser close` before returning, even if the test fails, login fails, or an error occurs. Failure to close leaks processes.
+9. **Minimum screenshot evidence set** — Always capture: `00-login-success.png`, `01-table-page.png`, per-action result screenshots, transition evidence (open + backtrack), error evidence (`*-error.png`), and `07-final-state.png`.
 
 ## Snapshot Budget
 
@@ -83,6 +84,15 @@ Navigate back to list page.
 agent-browser errors
 agent-browser screenshot {{SCREENSHOTS_DIR}}/07-final-state.png
 agent-browser close
+```
+
+**If an error occurs at ANY point before Step 5**, you MUST still close the browser:
+
+```
+# On error:
+agent-browser screenshot {{SCREENSHOTS_DIR}}/XX-crash-state.png   (best effort)
+agent-browser close                                                (MANDATORY)
+# Then return report with status: "fail"
 ```
 
 ## Output

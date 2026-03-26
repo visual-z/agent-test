@@ -301,7 +301,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
         // -----------------------------------------------------------------
         if (event.type === "session.created") {
           const loop = getLoopState();
-          const newSessionId = (event as any).properties?.sessionId ?? null;
+          const newSessionId = (event as any).properties?.sessionID ?? null;
           // Always rebind on session.created — if old session crashed without
           // firing session.deleted, this prevents the loop from "sticking dead"
           if (newSessionId) {
@@ -322,7 +322,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
         // -----------------------------------------------------------------
         if (event.type === "session.deleted") {
           const loop = getLoopState();
-          const deletedId = (event as any).properties?.sessionId ?? null;
+          const deletedId = (event as any).properties?.sessionID ?? null;
           if (deletedId && deletedId === loop.sessionId) {
             loop.sessionId = null;
             saveLoopState(loop);
@@ -336,7 +336,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
         // -----------------------------------------------------------------
         if (event.type === "session.error") {
           const loop = getLoopState();
-          const errorMsg = (event as any).properties?.error ?? "unknown error";
+          const errorMsg = (event as any).properties?.error ?? (event as any).properties?.message ?? "unknown error";
           log("error", "Session error detected", {
             sessionId: loop.sessionId,
             error: errorMsg,
@@ -383,7 +383,7 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
           }
 
           // Guard: resolve session ID — bind to first session, reject others
-          const eventSessionId = (event as any).properties?.sessionId ?? null;
+          const eventSessionId = (event as any).properties?.sessionID ?? null;
           if (!eventSessionId && !loop.sessionId) {
             log("warn", "No session ID available, skipping idle event");
             return;
@@ -613,3 +613,5 @@ export const AgentTestLoop: Plugin = async ({ client, $, directory }) => {
     },
   };
 };
+
+export default AgentTestLoop;

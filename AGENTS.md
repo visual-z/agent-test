@@ -33,13 +33,15 @@ Pick the installation path that matches your platform.
 
 ## Step 2: Install (Claude Code)
 
-Run this from the agent-test repo root:
+**ALWAYS use the install script.** Run this from the agent-test repo root:
 
 ```bash
 bash install/install-claude-code.sh --project
 ```
 
-This installs into the current project's `.claude/` directory. Use `--global` instead to install into `~/.claude/` for all projects.
+This is the recommended installation method. It copies all plugin, skill, prompt, and reference files into the project's `.claude/` directory, **and registers the plugin with Claude Code** via `claude plugin install`. Use `--global` instead to install into `~/.claude/` for all projects.
+
+> **Important:** The install script handles plugin registration automatically. If you skip the script and copy files manually, Claude Code will **not** load the plugin unless you also run `claude plugin install`.
 
 **What gets installed:**
 
@@ -53,7 +55,12 @@ This installs into the current project's `.claude/` directory. Use `--global` in
 | `.claude/skills/monkey-test/prompts/` | Subagent prompt templates |
 | `.claude/skills/monkey-test/reference/` | Schema docs and classification guides |
 
-**Manual install** (if the script is unavailable):
+**Prerequisites:**
+- `jq` must be installed. Check with `which jq`. If missing: `brew install jq` (macOS) or `apt install jq` (Linux).
+- `agent-browser` must be installed. Check with `which agent-browser`. If missing: `npm install -g agent-browser` (see [GitHub](https://github.com/vercel-labs/agent-browser)). This is the headless browser used by testing subagents.
+
+<details>
+<summary><strong>Manual install</strong> (only if the install script is unavailable)</summary>
 
 ```bash
 mkdir -p .claude/plugins/monkey-test/{.claude-plugin,hooks,scripts}
@@ -62,6 +69,9 @@ cp plugins/claude-code/hooks/hooks.json .claude/plugins/monkey-test/hooks/
 cp plugins/claude-code/scripts/ralph-loop.sh .claude/plugins/monkey-test/scripts/
 chmod +x .claude/plugins/monkey-test/scripts/ralph-loop.sh
 
+# Register the plugin (required — without this, Claude Code won't load it)
+claude plugin install .claude/plugins/monkey-test --scope project
+
 mkdir -p .claude/skills/monkey-test
 cp SKILL.md .claude/skills/monkey-test/
 cp -R skills/ .claude/skills/monkey-test/skills/
@@ -69,21 +79,19 @@ cp -R prompts/ .claude/skills/monkey-test/prompts/
 cp -R reference/ .claude/skills/monkey-test/reference/
 ```
 
-**Prerequisite:** `jq` must be installed. Check with `which jq`. If missing: `brew install jq` (macOS) or `apt install jq` (Linux).
-
-**Prerequisite:** `agent-browser` must be installed. Check with `which agent-browser`. If missing: `npm install -g agent-browser` (see [GitHub](https://github.com/vercel-labs/agent-browser)). This is the headless browser used by testing subagents.
+</details>
 
 ---
 
 ## Step 2: Install (OpenCode)
 
-Run this from the agent-test repo root:
+**ALWAYS use the install script.** Run this from the agent-test repo root:
 
 ```bash
 bash install/install-opencode.sh --project
 ```
 
-This installs into the current project's `.opencode/` directory. Use `--global` instead to install into `~/.config/opencode/` for all projects.
+This is the recommended installation method. It copies all plugin, skill, prompt, and reference files into the project's `.opencode/` directory. OpenCode automatically discovers plugins from `.opencode/plugins/` — no manual registration is needed. Use `--global` instead to install into `~/.config/opencode/` for all projects.
 
 **What gets installed:**
 
@@ -95,7 +103,12 @@ This installs into the current project's `.opencode/` directory. Use `--global` 
 | `.opencode/skills/monkey-test/prompts/` | Subagent prompt templates |
 | `.opencode/skills/monkey-test/reference/` | Schema docs and classification guides |
 
-**Manual install** (if the script is unavailable):
+**Prerequisites:**
+- `jq` must be installed. Check with `which jq`. If missing: `brew install jq` (macOS) or `apt install jq` (Linux).
+- `agent-browser` must be installed. Check with `which agent-browser`. If missing: `npm install -g agent-browser` (see [GitHub](https://github.com/vercel-labs/agent-browser)). This is the headless browser used by testing subagents.
+
+<details>
+<summary><strong>Manual install</strong> (only if the install script is unavailable)</summary>
 
 ```bash
 mkdir -p .opencode/plugins
@@ -108,9 +121,8 @@ cp -R prompts/ .opencode/skills/monkey-test/prompts/
 cp -R reference/ .opencode/skills/monkey-test/reference/
 ```
 
-**Prerequisite:** `jq` must be installed. Check with `which jq`. If missing: `brew install jq` (macOS) or `apt install jq` (Linux).
+</details>
 
-**Prerequisite:** `agent-browser` must be installed. Check with `which agent-browser`. If missing: `npm install -g agent-browser` (see [GitHub](https://github.com/vercel-labs/agent-browser)). This is the headless browser used by testing subagents.
 
 ---
 

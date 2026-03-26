@@ -33,6 +33,27 @@ This creates an isolated browser instance for this subagent. After all testing c
 agent-browser close
 ```
 
+**CRITICAL — Browser cleanup is MANDATORY regardless of outcome:**
+
+The `agent-browser close` command MUST be executed even if:
+- The test encounters errors or exceptions
+- Login fails
+- The page is unreachable
+- A click causes a crash
+- The subagent is about to report `status: "fail"`
+
+Treat every test as a try/finally block:
+
+```
+agent-browser launch --headless
+try:
+    ... all testing steps ...
+finally:
+    agent-browser close    ← ALWAYS execute this, no exceptions
+```
+
+Failure to close the browser will leak `agent-browser` daemon processes and Chrome child processes. Over a full test run (50+ routes), this can accumulate hundreds of orphaned processes and exhaust system resources.
+
 ## The DFS Algorithm
 
 The page is a tree of interactive elements. Each element is a "node". Clicking a node may reveal children (dialogs, dropdowns, wizard steps, sub-menus). The algorithm exhaustively visits every node.
@@ -216,6 +237,21 @@ agent-browser close
 
 `07-final-state.png` is mandatory for every route and serves as the route end-state evidence.
 
+### Crash Cleanup
+
+If an error occurs at ANY point before Phase 5, **you MUST still run `agent-browser close`** before returning your report. The sequence is:
+
+```
+# Error occurred during testing...
+# 1. Try to capture evidence
+agent-browser screenshot {screenshots_dir}/XX-crash-state.png    (best effort, may fail)
+# 2. ALWAYS close the browser
+agent-browser close
+# 3. Return report with status: "fail" and the error details
+```
+
+Never return from a failed test without closing the browser.
+
 ## Result Classification
 
 After each click, classify the outcome:
@@ -283,6 +319,6 @@ Report a bug if:
 - [ ] DFS backtracking after each interaction
 - [ ] All results classified and recorded in action tree
 - [ ] Bugs detected and documented with screenshots
-- [ ] `agent-browser close` at end
+- [ ] `agent-browser close` at end **(even if test failed — this is the #1 cause of process leaks)**
 - [ ] Final screenshot present: `07-final-state.png`
 - [ ] Report JSON produced with full action tree
