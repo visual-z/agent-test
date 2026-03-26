@@ -177,7 +177,7 @@ These rules are non-negotiable. Violating them will break the pipeline.
 ### Subagent Lifecycle
 - **Every subagent is ephemeral.** One fresh `Task()` call per route. No `task_id` reuse. Born, do one job, return result, die.
 - **Never reuse a subagent for multiple routes.** Accumulated context causes hallucinations and context overflow.
-- **Each testing subagent launches its own browser session** with `agent-browser open --headless <url>` and closes it with `agent-browser close`.
+- **Each testing subagent launches its own browser session** with `agent-browser open <url>` and closes it with `agent-browser close`.
 - **Review subagents do not use browsers.** They read files only.
 
 ### State File
