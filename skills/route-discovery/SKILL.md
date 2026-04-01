@@ -38,7 +38,7 @@ Search patterns (framework-agnostic):
 
 ### Strategy B: Browser-Based Discovery (Fallback)
 
-If no source code access, explore via browser using **Agent Browser only** (headless mode):
+If no source code access, explore via browser using **Agent Browser only** (headless by default):
 
 ```
 agent-browser open {base_url}

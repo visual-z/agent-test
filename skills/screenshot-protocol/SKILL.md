@@ -9,7 +9,7 @@ description: Use when taking screenshots during agent testing. Defines wait-befo
 
 Every action in agent testing MUST produce a screenshot. This skill defines the mandatory wait-before-screenshot sequence, naming conventions, and how screenshots correlate to report steps.
 
-**Tool:** All screenshots use `agent-browser screenshot` (Agent Browser). Browser MUST be started with `agent-browser open <url>`. Each subagent uses its own independent browser session.
+**Tool:** All screenshots use `agent-browser screenshot` (Agent Browser). Browser sessions start with `agent-browser open <url>` (headless is the default). Each subagent uses its own independent browser session.
 
 ## Snapshot Budget — Decision Points Only
 

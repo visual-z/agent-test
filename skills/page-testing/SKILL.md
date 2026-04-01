@@ -14,7 +14,7 @@ Each subagent tests **one route**. The algorithm treats the page as a maze: clic
 **CRITICAL — These rules are non-negotiable:**
 
 1. **Agent Browser only** — Use `agent-browser` for ALL browser interactions. Do NOT install Playwright, Puppeteer, Selenium, or any other browser automation tool.
-2. **Headless mode** — Always launch with headless. The test may run on a headless server.
+2. **Headless mode** — Agent Browser is headless by default. Do not use non-existent `launch` commands.
 3. **Independent session** — Each subagent MUST use its own browser session. NEVER reuse or share a browser instance across subagents. This prevents operation mutex conflicts.
 4. **No code file access** — Subagents MUST NOT read project source code. Only interact with the running application through the browser.
 5. **Ephemeral lifecycle** — Each subagent tests ONE route, returns its report, and terminates. The orchestrator NEVER reuses a subagent for a second route. Each batch gets fresh Task calls without `task_id`.

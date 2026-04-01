@@ -1,13 +1,13 @@
 ---
 name: agent-test
-description: Use when performing autonomous UI agent testing on any web application to achieve 100% route coverage. Drives the full pipeline from route discovery through DFS click-all testing with Ralph Loop autonomous execution.
+description: Use when performing autonomous UI agent testing on any web application to achieve 100% route coverage. Drives the full pipeline from route discovery through DFS click-all testing.
 ---
 
 # Agent Test — Autonomous UI Coverage
 
 ## Overview
 
-Autonomously agent-test every route in a web application. Dispatches one subagent per route, each performing DFS click-all testing (the "maze algorithm"), producing screenshots and structured reports. Uses the **Ralph Loop** harness pattern for unattended autonomous execution — the user starts the test and walks away.
+Autonomously agent-test every route in a web application. Dispatches one subagent per route, each performing DFS click-all testing (the "maze algorithm"), producing screenshots and structured reports. Designed for unattended autonomous execution — the user starts the test and walks away.
 
 **Project-agnostic.** Works with any SPA or MPA.
 
@@ -15,7 +15,7 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                       Ralph Loop Harness                          │
+│                       Host Environment                              │
 │    (external iteration — agent never controls its own loop)       │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                    │
@@ -25,7 +25,7 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 │  │ Discovery    │   │ Initialize    │   │ (ask user)       │     │
 │  └──────────────┘   └───────────────┘   └──────────────────┘     │
 │                                                                    │
-│  Phase 2: Test Execution (Ralph Loop — batched)                    │
+│  Phase 2: Test Execution (Loop — batched)                          │
 │  ┌──────────────────────────────────────────────────────────┐     │
 │  │  Pick batch → Dispatch N fresh subagents in parallel      │     │
 │  │                                                            │     │
@@ -40,7 +40,7 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 │  │  More pending? → next batch   |   0 pending? → Phase 3    │     │
 │  └──────────────────────────────────────────────────────────┘     │
 │                                                                    │
-│  Phase 3: Bug Report Review (Ralph Loop — batched)                 │
+│  Phase 3: Bug Report Review (Loop — batched)                       │
 │  ┌──────────────────────────────────────────────────────────┐     │
 │  │  Pick batch → Dispatch N fresh REVIEW subagents           │     │
 │  │                                                            │     │
@@ -58,7 +58,7 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 │  Phase 4: Final Summary                                            │
 │  ┌──────────────────────────────────────────────────────────┐     │
 │  │  Read all per-route bug reports → Generate FINAL-REPORT   │     │
-│  │  → Agent goes idle → Harness detects FINAL-REPORT.md      │     │
+│  │  → Run ends → Future invocation sees FINAL-REPORT.md      │     │
 │  └──────────────────────────────────────────────────────────┘     │
 │                                                                    │
 └──────────────────────────────────────────────────────────────────┘
@@ -78,69 +78,63 @@ Autonomously agent-test every route in a web application. Dispatches one subagen
 
 **The lifecycle is: born → do one job → return result → die.** No exceptions.
 
-## Ralph Loop Integration
+## Loop-Agnostic Orchestration
 
-The Ralph Loop is a **harness pattern** — the agent does not loop itself. An external plugin (Claude Code hook or OpenCode plugin) detects when the agent goes idle, reads the state file to determine if work remains, and re-invokes the agent with a continuation prompt.
+This skill is intentionally loop-system-agnostic. It does not depend on any specific LARP/loop plugin implementation.
+
+It supports two equivalent run modes:
+
+1. **Driver-managed mode** — Any external loop system re-invokes the agent between batches.
+2. **State-resume mode** — A user (or loop system) invokes the skill again later (for example: "resume agent test").
+
+In both modes, phase selection is determined only by `.monkey-test-state.json` and report files.
 
 ### How It Works Here
 
 1. **The agent runs one iteration** — picks a batch of pending routes, dispatches subagents, collects results, updates state file
 2. **The agent finishes and goes idle** — no special output required
-3. **The harness reads `.monkey-test-state.json`** and decides:
-   - `pending > 0` → inject continuation prompt for testing phase
-   - `pending == 0, review_pending > 0` → inject continuation prompt for review phase
-   - `pending == 0, review_pending == 0, no FINAL-REPORT.md` → inject prompt to generate final report
+3. **Next invocation reads `.monkey-test-state.json`** and decides:
+   - `pending > 0` → continue testing phase
+   - `pending == 0, review_pending > 0` → continue review phase
+   - `pending == 0, review_pending == 0, no FINAL-REPORT.md` → generate final report
    - `FINAL-REPORT.md exists` → DONE, let the agent stop
 
 ### State-File-Driven Completion Detection
 
-The harness **never** relies on agent output to determine loop state. The `.monkey-test-state.json` file is the single source of truth. Phase detection logic:
+The orchestrator/driver should never rely on conversational output to determine loop state. The `.monkey-test-state.json` file is the single source of truth. Phase detection logic:
 
-| Condition | Phase | Harness Action |
-|-----------|-------|---------------|
-| `meta.pending > 0` | Testing | Inject testing continuation prompt |
-| `meta.pending == 0 && meta.review_pending > 0` | Review | Inject review continuation prompt |
-| `meta.pending == 0 && meta.review_pending == 0 && no FINAL-REPORT.md` | Final Report | Inject final report prompt |
+| Condition | Phase | Action |
+|-----------|-------|--------|
+| `meta.pending > 0` | Testing | Continue testing batch |
+| `meta.pending == 0 && meta.review_pending > 0` | Review | Continue review batch |
+| `meta.pending == 0 && meta.review_pending == 0 && no FINAL-REPORT.md` | Final Report | Generate final report |
 | `FINAL-REPORT.md exists` | Done | Allow agent to stop |
 
-This means the agent does NOT need to emit `<promise>` tags. The harness handles everything externally. The agent just needs to update the state file correctly after each batch.
-
-### Harness Implementations
-
-The Ralph Loop harness is NOT part of this skill's code. It lives in the **host environment**:
-
-- **Claude Code**: `plugins/claude-code/scripts/ralph-loop.sh` — a Stop hook that intercepts agent idle
-- **OpenCode**: `plugins/opencode/index.ts` — a plugin that listens for `session.idle` events
-
-Install the appropriate plugin for your platform. See the plugin READMEs for details.
+The agent does NOT need to emit `<promise>` tags. The agent just needs to update the state file correctly after each batch.
 
 ### Responsibility Split
 
-| Responsibility | Agent | Harness |
-|---------------|-------|---------|
+| Responsibility | Agent | Driver / Caller |
+|---------------|-------|-------------|
 | Pick batch from pending | Yes | No |
 | Dispatch subagents | Yes | No |
 | Update state file | Yes | No |
 | Read state file for phase detection | No | Yes |
-| Inject continuation prompt | No | Yes |
-| Enforce max iterations | No | Yes |
-| Track iteration count | No | Yes |
+| Trigger next invocation | No | Yes |
 | Stall detection | No | Yes |
 | Context management (session restart) | No | Yes |
 
-The harness is a thin external loop. The agent does all the real work.
+The driver/caller is a thin wrapper. The agent does all the real work.
 
-### Anti-Dead-Loop Guarantees
+### Safety Guarantees
 
-The Ralph Loop is NOT a `while(true)` inside the agent. Safeguards:
+Safeguards:
 
-1. **Agent terminates after each batch** — it goes idle and the harness decides
-2. **Harness controls re-invocation** — agent cannot force another iteration
-3. **Max iterations** — harness enforces a configurable limit (default: 100)
-4. **State file is source of truth** — if state shows 0 pending and 0 review_pending and FINAL-REPORT.md exists, the loop ends
-5. **Stall detection** — if the state file is unchanged for 3 consecutive iterations, the harness stops the loop
-6. **Per-session limit** — harness restarts with a fresh context after N iterations (default: 10) to prevent context overflow
-7. **Each iteration is independently valid** — crash mid-iteration leaves routes in "pending" (safe retry)
+1. **Agent terminates after each batch** — the current run ends and a future invocation continues
+2. **Driver controls re-invocation** — agent cannot force another iteration
+3. **State file is source of truth** — if state shows 0 pending and 0 review_pending and FINAL-REPORT.md exists, the loop ends
+4. **Stall detection (optional, driver-side)** — if state is unchanged for consecutive invocations, the driver can stop
+5. **Each iteration is independently valid** — crash mid-iteration leaves routes in "pending" (safe retry)
 
 ## Workflow
 
@@ -233,7 +227,7 @@ digraph setup {
    - `batch_size`: Routes per iteration (default: 3)
    - `safe_to_mutate`: Whether destructive actions are allowed (default: false)
 
-### Phase 2: Test Execution (Ralph Loop)
+### Phase 2: Test Execution (Loop)
 
 Each iteration of the loop:
 
@@ -246,7 +240,7 @@ digraph iteration {
     "Dispatch Fresh Subagents" -> "Subagents Return + Die";
     "Subagents Return + Die" -> "Collect Results";
     "Collect Results" -> "Update State";
-    "Update State" -> "Done — agent goes idle, harness reads state";
+    "Update State" -> "Done — agent goes idle, host reads state";
 }
 ```
 
@@ -272,11 +266,11 @@ digraph iteration {
 8. **Update state** — Move routes from pending to completed/failed, update counters
 9. **Go idle** — The harness reads the state file and decides whether to continue or transition to Phase 3
 
-### Phase 3: Bug Report Review (Ralph Loop)
+### Phase 3: Bug Report Review (Loop)
 
 After all testing is complete (0 pending routes), the orchestrator enters the review phase. This phase dispatches **review subagents** to examine screenshots and test reports for each sub-route, producing per-route bug analysis reports.
 
-**Same Ralph Loop contract** — the review phase uses the same state-file-driven approach. The harness detects `review_pending > 0` and injects review continuation prompts.
+**Same contract** — the review phase uses the same state-file-driven approach. Next invocation checks `review_pending > 0` and continues review.
 
 #### Screenshot Batch-Slicing
 
@@ -322,7 +316,7 @@ digraph review_iteration {
     "Reviewers Return + Die" -> "Aggregate Sliced Reports (if any)";
     "Aggregate Sliced Reports (if any)" -> "Write Bug Reports";
     "Write Bug Reports" -> "Update State (review_status)";
-    "Update State (review_status)" -> "Done — agent goes idle, harness reads state";
+    "Update State (review_status)" -> "Done — agent goes idle, host reads state";
 }
 ```
 
@@ -340,7 +334,7 @@ digraph review_iteration {
 7. **Aggregate sliced routes** — For routes that were sliced, merge partial reports into unified bug report
 8. **Write bug reports** — Save each to `monkey-test-reports/{route_slug}-bugs.md`
 9. **Update state** — Set `review_status: "review_complete"` for each reviewed route. Update `meta.last_updated`.
-10. **Go idle** — The harness reads the state file and decides whether to continue review or transition to Phase 4
+10. **End run** — Next invocation reads state and continues review or transitions to Phase 4
 
 #### Review Subagent Dispatch
 
@@ -387,7 +381,7 @@ After all per-route reviews complete (0 routes with `review_status: "review_pend
 2. **Aggregate statistics** — Count bugs by severity across all routes
 3. **Generate `FINAL-REPORT.md`** — Write the consolidated report to `monkey-test-reports/FINAL-REPORT.md` (see `reference/bug-report-format.md` for the schema)
 4. **Print summary to user** — Display total routes tested, bug counts by severity, and the path to the final report
-5. **Done** — The agent goes idle. The harness sees `FINAL-REPORT.md` exists and lets the agent stop.
+5. **Done** — Future invocations see `FINAL-REPORT.md` exists and stop.
 
 ## Sub-Skills & Prompts Reference
 
@@ -399,7 +393,6 @@ After all per-route reviews complete (0 routes with `review_status: "review_pend
 | `agent-test:screenshot-protocol` | Wait-before-screenshot, snapshot budget, naming conventions | Phase 2 subagents |
 | `prompts/page-tester-agent.md` | Lean subagent prompt template for testing one route | Phase 2 dispatch |
 | `prompts/report-reviewer-agent.md` | Subagent prompt template for reviewing one route's results | Phase 3 dispatch |
-| `prompts/ralph-loop-harness.md` | Continuation prompt templates for the Ralph Loop | All phases |
 | `reference/report-format.md` | Per-route test report JSON schema | Phase 2 output |
 | `reference/testing-reference.md` | Result classification, bug triggers, screenshot naming, backtracking | Phase 2 (loaded on demand by subagents) |
 | `reference/bug-report-format.md` | Per-route bug report + final report Markdown schema | Phase 3-4 output |
@@ -443,7 +436,6 @@ Task(
 |---------|---------|---------|
 | `batch_size` (testing) | 3 | User-specified |
 | `batch_size` (review) | 5 | User-specified |
-| `max_iterations` | 100 | Harness-configured |
 | `safe_to_mutate` | false | User must explicitly enable |
 | `wait_after_click` | 2000ms | Per screenshot-protocol |
 | `wait_slow_pages` | 3000ms | Per screenshot-protocol |
@@ -477,11 +469,11 @@ project-root/
 | Failure | Recovery |
 |---------|----------|
 | Subagent crashes mid-test | Route stays in "pending" — retried next iteration |
-| Login fails | Agent writes `status: "blocked"` + reason to state file — harness reads it and stops |
-| App unreachable | Agent writes `status: "blocked"` + reason to state file — harness reads it and stops |
+| Login fails | Agent writes `status: "blocked"` + reason to state file — driver/caller reads it and stops |
+| App unreachable | Agent writes `status: "blocked"` + reason to state file — driver/caller reads it and stops |
 | All subagents fail in a batch | Log failures, continue to next batch (don't BLOCK for partial failures) |
 | State file corrupted | Rebuild from ROUTE_MAP.md + existing report files |
-| Agent goes idle without state update | Harness detects unchanged state hash, counts as stall iteration |
+| Agent exits without state update | Driver can detect unchanged state hash and classify as stalled |
 | Review subagent crashes | Route stays `review_pending` — retried next review iteration |
 | Report JSON missing for a route | Mark route as `review_failed` in state, note in FINAL-REPORT |
 | Screenshots directory empty | Review subagent returns "no test data" report, recommends re-test |
@@ -519,4 +511,4 @@ project-root/
 - [ ] All per-route bug reports aggregated
 - [ ] `FINAL-REPORT.md` generated with consolidated statistics
 - [ ] Final summary printed to user
-- [ ] `FINAL-REPORT.md` written — harness detects it and stops the loop
+- [ ] `FINAL-REPORT.md` written — subsequent invocations detect completion and stop

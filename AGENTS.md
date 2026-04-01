@@ -1,12 +1,12 @@
 # AGENTS.md — Instructions for AI Agents
 
-If you are an AI agent (Claude, GPT, Gemini, or any LLM-based coding assistant), this file tells you how to install and run agent-test. Follow these steps exactly.
+If you are an AI agent (Claude, GPT, Gemini, or any LLM-based coding assistant), this file tells you how to use agent-test. Follow these steps exactly.
 
 ---
 
 ## What agent-test Does
 
-agent-test is a skill + plugin package that makes you an autonomous QA tester. Once installed and triggered, you will:
+agent-test is a **skills package** that makes you an autonomous QA tester. Once triggered, you will:
 
 1. Discover every navigable route in a web application
 2. Test each route by clicking every interactive element (DFS "maze algorithm")
@@ -14,13 +14,13 @@ agent-test is a skill + plugin package that makes you an autonomous QA tester. O
 4. Review all screenshots for bugs
 5. Produce a consolidated bug report
 
-An external **Ralph Loop harness** (a plugin installed alongside the skills) keeps you running across iterations. You do not need to loop yourself. You run one batch, update the state file, and go idle. The harness reads the state file, determines if work remains, and re-invokes you with a continuation prompt.
+This skill runs in batches. For each run, complete one batch, update state, and end the run. The next run continues from state.
 
 ---
 
-## Step 1: Determine Your Platform
+## Project Structure
 
-You are running in one of these environments:
+agent-test is a pure skills package. Copy the skills into your platform's skill directory and you're ready to go.
 
 | Platform | How to detect |
 |---|---|
@@ -43,17 +43,9 @@ This is the recommended installation method. It copies all plugin, skill, prompt
 
 > **Important:** The install script handles plugin registration automatically. If you skip the script and copy files manually, Claude Code will **not** load the plugin unless you also run `claude plugin install`.
 
-**What gets installed:**
+## Installation
 
-| Destination | Contents |
-|---|---|
-| `.claude/plugins/monkey-test/.claude-plugin/plugin.json` | Plugin manifest |
-| `.claude/plugins/monkey-test/hooks/hooks.json` | Stop hook registration |
-| `.claude/plugins/monkey-test/scripts/ralph-loop.sh` | Ralph Loop harness script |
-| `.claude/skills/monkey-test/SKILL.md` | Main orchestrator skill |
-| `.claude/skills/monkey-test/skills/` | Sub-skills (page-testing, route-discovery, screenshot-protocol, state-management) |
-| `.claude/skills/monkey-test/prompts/` | Subagent prompt templates |
-| `.claude/skills/monkey-test/reference/` | Schema docs and classification guides |
+Copy the skills into your platform's skill directory.
 
 **Prerequisites:**
 - `jq` must be installed. Check with `which jq`. If missing: `brew install jq` (macOS) or `apt install jq` (Linux).
@@ -88,7 +80,11 @@ cp -R reference/ .claude/skills/monkey-test/reference/
 **ALWAYS use the install script.** Run this from the agent-test repo root:
 
 ```bash
-bash install/install-opencode.sh --project
+mkdir -p ~/.claude/skills/monkey-test
+cp SKILL.md ~/.claude/skills/monkey-test/
+cp -R skills/ ~/.claude/skills/monkey-test/skills/
+cp -R prompts/ ~/.claude/skills/monkey-test/prompts/
+cp -R reference/ ~/.claude/skills/monkey-test/reference/
 ```
 
 This is the recommended installation method. It copies all plugin, skill, prompt, and reference files into the project's `.opencode/` directory. OpenCode automatically discovers plugins from `.opencode/plugins/` — no manual registration is needed. Use `--global` instead to install into `~/.config/opencode/` for all projects.
@@ -111,9 +107,6 @@ This is the recommended installation method. It copies all plugin, skill, prompt
 <summary><strong>Manual install</strong> (only if the install script is unavailable)</summary>
 
 ```bash
-mkdir -p .opencode/plugins
-cp plugins/opencode/index.ts .opencode/plugins/monkey-test-loop.ts
-
 mkdir -p .opencode/skills/monkey-test
 cp SKILL.md .opencode/skills/monkey-test/
 cp -R skills/ .opencode/skills/monkey-test/skills/
@@ -123,10 +116,9 @@ cp -R reference/ .opencode/skills/monkey-test/reference/
 
 </details>
 
-
 ---
 
-## Step 3: Run agent-test
+## Running agent-test
 
 Once installed, the user will say something like:
 
@@ -152,7 +144,7 @@ When you receive this instruction, load the `monkey-test` skill (the `SKILL.md` 
 4. Each subagent: launches headless browser, navigates to route, runs DFS click-all, screenshots everything, returns JSON report, terminates
 5. Collect results, write reports to `monkey-test-reports/{route_slug}.json`
 6. Update state file (move routes from `pending` to `completed` or `failed`)
-7. Go idle — the harness reads the state file and re-invokes you if pending routes remain
+7. End the run — next invocation reads state and continues if pending routes remain
 
 ### Phase 3: Bug Report Review
 1. Pick batch of routes with `review_status: "review_pending"` (default batch: 5)
@@ -161,12 +153,12 @@ When you receive this instruction, load the `monkey-test` skill (the `SKILL.md` 
 4. Routes with >30 screenshots are sliced across multiple reviewers
 5. Write bug reports to `monkey-test-reports/{route_slug}-bugs.md`
 6. Update state file
-7. Go idle — harness continues if review_pending routes remain
+7. End the run — next invocation continues if review_pending routes remain
 
 ### Phase 4: Final Summary
 1. Read all per-route bug reports
 2. Aggregate into `monkey-test-reports/FINAL-REPORT.md`
-3. Go idle — harness sees `FINAL-REPORT.md` and lets you stop
+3. End the run — future invocations see `FINAL-REPORT.md` and stop
 
 ---
 
@@ -187,15 +179,14 @@ These rules are non-negotiable. Violating them will break the pipeline.
 - Every route is in exactly one array: `pending`, `completed`, or `failed`.
 - Counters in `meta` must match array lengths.
 
-### Ralph Loop Contract
-- You do NOT loop yourself. The external harness handles iteration.
-- You do NOT need to emit `<promise>` tags or any special markers.
-- After each batch: update the state file, then go idle. That is all.
-- The harness reads the state file and decides what to do next.
+### Loop Contract
+- You do NOT loop yourself. Any external driver/caller handles re-invocation.
+- After each batch: update the state file, then end the run.
+- Next invocation determines phase only from state/output files.
 
 ### Safety
 - Default `safe_to_mutate` is `false`. Do not click "Confirm", "Delete", "Submit", or "Create" on destructive actions unless the user explicitly enables mutation.
-- If login fails or the app is unreachable, write `status: "blocked"` to the state file with a reason. The harness will stop.
+- If login fails or the app is unreachable, write `status: "blocked"` to the state file with a reason. The driver/caller should stop.
 
 ---
 
@@ -212,7 +203,6 @@ After installation, these are the files you need to know about:
 | `skills/state-management/SKILL.md` | State file operations | Every phase |
 | `prompts/page-tester-agent.md` | Template for testing subagent dispatch | Phase 2 |
 | `prompts/report-reviewer-agent.md` | Template for review subagent dispatch | Phase 3 |
-| `prompts/ralph-loop-harness.md` | Continuation prompt templates | Used by the harness, not by you |
 | `reference/state-schema.md` | `.monkey-test-state.json` schema | When initializing or updating state |
 | `reference/report-format.md` | Test report JSON schema | Phase 2 output |
 | `reference/bug-report-format.md` | Bug report Markdown schema | Phase 3-4 output |
@@ -237,12 +227,16 @@ If the session ended mid-test (context overflow, crash, or session limit), the u
 
 ## Uninstalling
 
+Remove the skill directory from your platform:
+
 ```bash
 # Claude Code
-bash install/install-claude-code.sh --uninstall
+rm -rf .claude/skills/monkey-test
+rm -rf ~/.claude/skills/monkey-test
 
 # OpenCode
-bash install/install-opencode.sh --uninstall
+rm -rf .opencode/skills/monkey-test
+rm -rf ~/.config/opencode/skills/monkey-test
 ```
 
-This removes the plugin, skills, prompts, and reference docs from both project and global locations. It does NOT remove test output (screenshots, reports, state file).
+This does NOT remove test output (screenshots, reports, state file).

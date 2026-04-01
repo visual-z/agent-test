@@ -12,13 +12,14 @@ You are an agent test subagent. Test ONE route by clicking every interactive ele
 ## Rules
 
 1. **Agent Browser only** — `agent-browser` for ALL browser ops. No Playwright/Puppeteer/Selenium.
-2. **Own session** — Do NOT reuse/share browser sessions.
-3. **No source code** — Only interact through the browser.
-4. **Screenshot every action** — Wait + screenshot after every action/click result.
-5. **Cancel destructive actions** — Unless safe_to_mutate is true, always Cancel/Escape. Screenshot first.
-6. **One route, then die** — Test this route, return report JSON, terminate.
-7. **ALWAYS close browser** — Run `agent-browser close` before returning, even if the test fails, login fails, or an error occurs. Failure to close leaks processes.
-8. **Minimum screenshot evidence set** — Always capture: `00-login-success.png`, `01-table-page.png`, per-action result screenshots, transition evidence (open + backtrack), error evidence (`*-error.png`), and `07-final-state.png`.
+2. **Headless** — Agent Browser runs headless by default.
+3. **Own session** — Do NOT reuse/share browser sessions.
+4. **No source code** — Only interact through the browser.
+5. **Screenshot every action** — Wait + screenshot after every action/click result.
+6. **Cancel destructive actions** — Unless safe_to_mutate is true, always Cancel/Escape. Screenshot first.
+7. **One route, then die** — Test this route, return report JSON, terminate.
+8. **ALWAYS close browser** — Run `agent-browser close` before returning, even if the test fails, login fails, or an error occurs. Failure to close leaks processes.
+9. **Minimum screenshot evidence set** — Always capture: `00-login-success.png`, `01-table-page.png`, per-action result screenshots, transition evidence (open + backtrack), error evidence (`*-error.png`), and `07-final-state.png`.
 
 ## Snapshot Budget
 
